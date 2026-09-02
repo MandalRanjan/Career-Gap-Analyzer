@@ -1,0 +1,146 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Sparkles, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { authAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
+import ThemeToggle from '../../components/ThemeToggle';
+
+export default function Login() {
+    const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [form, setForm] = useState({ email: '', password: '' });
+
+    const { login } = useAuth();
+    const navigate = useNavigate();
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        try {
+            let res;
+            const isAdminEmail = form.email.toLowerCase() === 'admin@careergap.com';
+            if (isAdminEmail) {
+                res = await authAPI.adminLogin(form);
+            } else {
+                res = await authAPI.studentLogin(form);
+            }
+
+            const { token, user } = res.data;
+            login(token, user);
+            toast.success(`Welcome back, ${user.name}!`);
+
+            if (user.role === 'admin') navigate('/admin/dashboard');
+            else navigate('/student/dashboard');
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Invalid email or password');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden"
+            style={{ backgroundColor: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+            {/* Theme toggle — top right */}
+            <div className="absolute top-5 right-5 z-20">
+                <ThemeToggle variant="icon" />
+            </div>
+
+            {/* Ambient liquid backdrop orbs */}
+            <div className="liquid-orb-blue top-20 left-1/4 opacity-40" />
+            <div className="liquid-orb-red bottom-20 right-1/4 opacity-30" />
+
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-md relative z-10"
+            >
+                {/* Logo */}
+                <div className="text-center mb-8">
+                    <Link to="/" className="inline-flex items-center gap-3 mb-4">
+                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-shade-blue-600 to-shade-blue-700 flex items-center justify-center shadow-md shadow-shade-blue-500/25 border border-shade-blue-500/30">
+                            <Sparkles className="w-6 h-6 text-white" />
+                        </div>
+                        <span className="font-black text-2xl tracking-tight" style={{ color: 'var(--text-primary)' }}>Career Gap Finder</span>
+                    </Link>
+                    <h2 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Welcome Back</h2>
+                    <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--text-body)' }}>Sign in to your account</p>
+                </div>
+
+                <div className="glass-card p-8 shadow-xl">
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div>
+                            <label className="label">Email Address</label>
+                            <input
+                                id="login-email"
+                                type="email"
+                                className="input-field font-medium"
+                                placeholder="you@example.com"
+                                value={form.email}
+                                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="label">Password</label>
+                            <div className="relative">
+                                <input
+                                    id="login-password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    className="input-field pr-12 font-medium"
+                                    placeholder="••••••••"
+                                    value={form.password}
+                                    onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                                    required
+                                />
+                                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 transition-colors"
+                                    style={{ color: 'var(--text-muted)' }}
+                                >
+                                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                </button>
+                            </div>
+                        </div>
+
+                        <button
+                            id="login-submit"
+                            type="submit"
+                            disabled={isLoading}
+                            className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 shadow-lg shadow-shade-blue-500/25 font-bold"
+                        >
+                            {isLoading ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            ) : (
+                                <>Sign In <ArrowRight className="w-4 h-4" /></>
+                            )}
+                        </button>
+                    </form>
+
+                    <div className="mt-6 text-center space-y-3">
+                        <p className="text-sm font-medium" style={{ color: 'var(--text-body)' }}>
+                            Don't have an account?{' '}
+                            <Link to="/register" className="text-shade-blue-600 hover:text-shade-blue-500 font-bold">
+                                Sign up free
+                            </Link>
+                        </p>
+                        <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+                            Admin?{' '}
+                            <button
+                                onClick={() => {
+                                    setForm({ email: 'admin@careergap.com', password: 'Admin@123' });
+                                    toast.success('Admin credentials filled — click Sign In');
+                                }}
+                                className="text-shade-red-500 hover:text-shade-red-400 font-bold"
+                            >
+                                Fill Admin Login
+                            </button>
+                        </p>
+                    </div>
+                </div>
+            </motion.div>
+        </div>
+    );
+}

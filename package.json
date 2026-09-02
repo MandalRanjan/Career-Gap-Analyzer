@@ -1,0 +1,19 @@
+{
+  "name": "career-gap-job-finder",
+  "version": "1.0.0",
+  "description": "Full-stack Career Gap Job Finder platform",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "start:backend": "cd backend && npm start",
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "seed:admin": "curl -X POST http://localhost:5000/api/admin/seed"
+  },
+  "dependencies": {
+    "mongod": "^2.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}
